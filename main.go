@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	_ "image/png"
@@ -45,28 +46,23 @@ type Game struct {
 }
 
 func initGL(w, h int) *glfw.Window {
-	err := glfw.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	// Set window hints
+	glfw.WindowHint(glfw.Resizable, glfw.True)
 	glfw.WindowHint(glfw.ContextVersionMajor, 3)
 	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	glfw.WindowHint(glfw.OpenGLForwardCompatible, gl.TRUE)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	win, err := glfw.CreateWindow(w, h, "gocraft", nil, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create GLFW window: %v", err)
 	}
 	win.MakeContextCurrent()
-	err = gl.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	glfw.SwapInterval(1) // enable vsync
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Enable(gl.CULL_FACE)
+	gl.CullFace(gl.BACK)
 	return win
 }
 
@@ -79,6 +75,7 @@ func NewGame(w, h int) (*Game, error) {
 	game.item = availableItems[0]
 
 	mainthread.Call(func() {
+		// Initialize OpenGL context for the game window
 		win := initGL(w, h)
 		win.SetMouseButtonCallback(game.onMouseButtonCallback)
 		win.SetCursorPosCallback(game.onCursorPosCallback)
@@ -307,31 +304,55 @@ func (f *FPS) Fps() int {
 	return f.fps
 }
 
+func init() {
+	runtime.LockOSThread()
+}
+
 func run() {
-	err := LoadTextureDesc()
+	// Initialize GLFW
+	if err := glfw.Init(); err != nil {
+		log.Fatalf("Failed to initialize GLFW: %v", err)
+	}
+	defer glfw.Terminate()
+
+	// Initialize OpenGL
+	if err := gl.Init(); err != nil {
+		log.Fatalf("Failed to initialize OpenGL: %v", err)
+	}
+
+	// Initialize gRPC client first, since it's needed for login
+	var err error
+	err = InitClient()
+	if err != nil {
+		log.Fatalf("Failed to initialize gRPC client: %v", err)
+	}
+
+	defer CloseClient()
+
+	err = LoadTextureDesc()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	err = InitStore()
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 	defer store.Close()
 
-	err = InitClient()
-	if err != nil {
-		log.Panic(err)
-	}
-	if client != nil {
-		defer client.Close()
-	}
+	// // Show login window and check result
+	// if !ShowLogin() {
+	//     log.Println("Login failed or cancelled")
+	//     return
+	// }
 
+	// Only create game after successful login
 	game, err = NewGame(800, 600)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
+	// Load player state and start game loop
 	game.camera.Restore(store.GetPlayerState())
 	tick := time.Tick(time.Second / 60)
 	for !game.ShouldClose() {

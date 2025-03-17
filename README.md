@@ -26,13 +26,13 @@ A Minecraft like game written in go, just for fun!
 
 ## Install
 
-`go get github.com/icexin/gocraft`
+`go get github.com/perlinson/gocraft`
 
 ## Run
 
 Suppose `$GOPATH/bin` is in your `PATH` env, use command below to run. 
 
-`cd $GOPATH/src/github.com/icexin/gocraft && gocraft`
+`cd $GOPATH/src/github.com/perlinson/gocraft && gocraft`
 
 ## How to play
 
@@ -46,9 +46,9 @@ Suppose `$GOPATH/bin` is in your `PATH` env, use command below to run.
 
 Multiplayer is supported now!
 
-The server code is at https://github.com/icexin/gocraft-server .
+The server code is at https://github.com/perlinson/gocraft .
 
-You can use `gocraft -s gocraft.icexin.com` to connect the public server.
+You can use `gocraft -s gocraft.perlinson.com` to connect the public server.
 
 Since the player on public server is anonymous, be carefull for your work!
 

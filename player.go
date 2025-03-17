@@ -7,7 +7,7 @@ import (
 	"github.com/faiface/mainthread"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/icexin/gocraft-server/proto"
+	playerPb "github.com/perlinson/gocraft/internal/proto/player"
 )
 
 type PlayerState struct {
@@ -105,7 +105,7 @@ func NewPlayerRender() (*PlayerRender, error) {
 	return r, nil
 }
 
-func (r *PlayerRender) UpdateOrAdd(id int32, s proto.PlayerState) {
+func (r *PlayerRender) UpdateOrAdd(id int32, s *playerPb.PlayerState) {
 	state := playerState{
 		PlayerState: PlayerState{
 			X:  s.X,

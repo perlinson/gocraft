@@ -1,0 +1,70 @@
+
+version: '3'
+
+vars:
+  BINARY_NAME: gocraft
+  SERVER_BINARY_NAME: gocraft-server
+  BUILD_DIR: build
+
+tasks:
+  clean:
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+
+  create-build-dir:
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+
+  build-client:
+    deps: [create-build-dir]
+    cmds:
+      - task: build-client-windows
+      - task: build-client-linux
+      - task: build-client-darwin
+
+  build-client-windows:
+    cmds:
+      - GOOS=windows GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-windows.exe
+
+  build-client-linux:
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-linux
+
+  build-client-darwin:
+    cmds:
+      - GOOS=darwin GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-darwin
+
+  build-server:
+    dir: gocraft-server
+    deps: [create-build-dir]
+    cmds:
+      - task: build-server-windows
+      - task: build-server-linux
+      - task: build-server-darwin
+
+  build-server-windows:
+    dir: gocraft-server
+    cmds:
+      - GOOS=windows GOARCH=amd64 go build -o ../{{.BUILD_DIR}}/{{.SERVER_BINARY_NAME}}-windows.exe ./cmd/server
+
+  build-server-linux:
+    dir: gocraft-server
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -o ../{{.BUILD_DIR}}/{{.SERVER_BINARY_NAME}}-linux ./cmd/server
+
+  build-server-darwin:
+    dir: gocraft-server
+    cmds:
+      - GOOS=darwin GOARCH=amd64 go build -o ../{{.BUILD_DIR}}/{{.SERVER_BINARY_NAME}}-darwin ./cmd/server
+
+  build-all:
+    deps: [build-client, build-server]
+    cmds:
+      - echo "所有平台构建完成！"
+
+  generate-grpc:
+    cmds:
+      - protoc --proto_path=proto --go_out=internal/proto/auth --go_opt=paths=source_relative --go-grpc_out=internal/proto/auth --go-grpc_opt=paths=source_relative proto/auth.proto
+      - protoc --proto_path=proto --go_out=internal/proto/block --go_opt=paths=source_relative --go-grpc_out=internal/proto/block --go-grpc_opt=paths=source_relative proto/block.proto
+      - protoc --proto_path=proto --go_out=internal/proto/player --go_opt=paths=source_relative --go-grpc_out=internal/proto/player --go-grpc_opt=paths=source_relative proto/player.proto
+    silent: false
